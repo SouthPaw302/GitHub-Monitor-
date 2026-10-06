@@ -71,3 +71,26 @@ The browser never receives the GitHub token.
 - No token persistence in browser storage
 - No automatic merge or branch-write controls
 - Read-only telemetry continues to work without mutation permissions
+
+
+## GitHub operator authentication
+
+AEGIS uses GitHub OAuth for **operator identity** while keeping the Actions-capable API credential server-side.
+
+Create a GitHub OAuth App with:
+
+- Homepage URL: `https://githubmonitor-seven.vercel.app/`
+- Authorization callback URL: `https://githubmonitor-seven.vercel.app/api/auth/callback/github`
+
+Configure:
+
+```bash
+AUTH_GITHUB_ID=<oauth client id>
+AUTH_GITHUB_SECRET=<oauth client secret>
+AUTH_SECRET=<strong random Auth.js secret>
+MONITOR_AUTHORIZED_USERS=SouthPaw302
+```
+
+The login requests only `read:user user:email`. Workflow rerun/cancel still uses the server-side `MONITOR_GITHUB_TOKEN`, requires `MONITOR_MUTATIONS_ENABLED=true`, and now also requires an authorized GitHub operator session.
+
+Generate the Auth.js secret with `npx auth secret`.

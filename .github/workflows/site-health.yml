@@ -28,6 +28,16 @@ jobs:
           test "$status" = "200"
           node -e 'const x=require("./site-health.json"); if(!x.generatedAt||!x.summary) process.exit(2); console.log("AEGIS SITE HEALTH: PASS", x.generatedAt, "repos=", x.summary.repoCount)'
 
+      - name: Probe GitHub sign-in surface
+        if: always()
+        run: |
+          set -euo pipefail
+          status="$(curl --silent --show-error --max-time 25 -w '%{http_code}' "$SITE_URL/signin" -o site-signin.html || true)"
+          echo "HTTP status: $status"
+          test "$status" = "200"
+          grep -q "GitHub Authentication" site-signin.html
+          echo "AEGIS AUTH SURFACE: PASS"
+
       - name: Probe page shell
         if: always()
         run: |
@@ -45,5 +55,6 @@ jobs:
           path: |
             site-health.json
             site-home.html
+            site-signin.html
           if-no-files-found: ignore
           retention-days: 3

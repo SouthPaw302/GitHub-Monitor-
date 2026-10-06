@@ -9,6 +9,8 @@ import {
   ExternalLink,
   GitBranch,
   GitPullRequest,
+  Github,
+  LockKeyhole,
   PauseCircle,
   Radio,
   RefreshCw,
@@ -113,24 +115,36 @@ function RunControls({
   run,
   onAction,
   busy,
+  enabled,
 }: {
   run: WorkflowRun;
   onAction: (run: WorkflowRun, action: "rerun" | "rerun-failed" | "cancel") => Promise<void>;
   busy: string | null;
+  enabled: boolean;
 }) {
   const key = `${run.repo}:${run.id}`;
   const isBusy = busy === key;
   if (run.state === "failure") {
     return (
-      <button className="control-button" disabled={isBusy} onClick={() => onAction(run, "rerun-failed")}>
-        <RotateCcw size={14} /> {isBusy ? "Sending…" : "Rerun failed"}
+      <button
+        className="control-button"
+        disabled={isBusy || !enabled}
+        title={!enabled ? "Authorized GitHub sign-in and server-side mutations are required." : "Rerun failed jobs"}
+        onClick={() => onAction(run, "rerun-failed")}
+      >
+        <RotateCcw size={14} /> {!enabled ? "Locked" : isBusy ? "Sending…" : "Rerun failed"}
       </button>
     );
   }
   if (run.state === "running" || run.state === "queued") {
     return (
-      <button className="control-button danger" disabled={isBusy} onClick={() => onAction(run, "cancel")}>
-        <Square size={13} /> {isBusy ? "Sending…" : "Cancel"}
+      <button
+        className="control-button danger"
+        disabled={isBusy || !enabled}
+        title={!enabled ? "Authorized GitHub sign-in and server-side mutations are required." : "Cancel workflow"}
+        onClick={() => onAction(run, "cancel")}
+      >
+        <Square size={13} /> {!enabled ? "Locked" : isBusy ? "Sending…" : "Cancel"}
       </button>
     );
   }
@@ -152,7 +166,15 @@ function RepoNode({ repo }: { repo: RepoTelemetry }) {
   );
 }
 
-export default function TelemetryDeck() {
+type OperatorIdentity = { login: string | null; name: string | null } | null;
+
+export default function TelemetryDeck({
+  authConfigured,
+  operator,
+}: {
+  authConfigured: boolean;
+  operator: OperatorIdentity;
+}) {
   const [snapshot, setSnapshot] = useState<MonitorSnapshot | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -259,6 +281,28 @@ export default function TelemetryDeck() {
             {auto ? <Zap size={15} /> : <PauseCircle size={15} />}
             Auto {auto ? "30s" : "off"}
           </button>
+          {authConfigured ? (
+            operator ? (
+              <div className="operator-chip">
+                <Github size={17} />
+                <div>
+                  <strong>@{operator.login || operator.name || "operator"}</strong>
+                  <span>AUTHORIZED OPERATOR</span>
+                </div>
+                <a href="/signout">Sign out</a>
+              </div>
+            ) : (
+              <a className="auth-button" href="/signin">
+                <Github size={17} />
+                Sign in with GitHub
+              </a>
+            )
+          ) : (
+            <span className="auth-disabled" title="Set AUTH_SECRET, AUTH_GITHUB_ID, and AUTH_GITHUB_SECRET on the deployment.">
+              <LockKeyhole size={15} />
+              OAuth setup pending
+            </span>
+          )}
         </div>
       </header>
 
@@ -402,7 +446,12 @@ export default function TelemetryDeck() {
                   <span className={`status-word state-${run.state}`}>{stateLabel(run)}</span>
                   <small>{ago(run.updatedAt)}</small>
                 </div>
-                <RunControls run={run} onAction={onAction} busy={actionBusy} />
+                <RunControls
+                  run={run}
+                  onAction={onAction}
+                  busy={actionBusy}
+                  enabled={Boolean(operator && snapshot?.capabilities.mutations)}
+                />
                 <a className="external" href={run.url} target="_blank" rel="noreferrer" title="Open on GitHub">
                   <ExternalLink size={15} />
                 </a>
@@ -482,6 +531,7 @@ export default function TelemetryDeck() {
           <div className="console-meta">
             <span><CheckCircle2 size={14} /> Last sample {snapshot ? ago(snapshot.generatedAt) : "pending"}</span>
             <span><Radio size={14} /> {snapshot?.authMode === "token" ? "Authenticated GitHub API" : "Public API fallback"}</span>
+            <span><Github size={14} /> {operator ? `Operator @${operator.login || operator.name || "signed-in"}` : "No operator session"}</span>
           </div>
         </div>
       </section>

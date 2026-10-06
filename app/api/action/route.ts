@@ -1,10 +1,35 @@
 import { NextResponse } from "next/server";
+import { auth, authConfigured, isAuthorizedGitHubLogin } from "@/auth";
 import { mutateRun } from "@/lib/github";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
   try {
+    if (!authConfigured) {
+      return NextResponse.json(
+        { error: "GitHub operator authentication is not configured." },
+        { status: 503 },
+      );
+    }
+
+    const session = await auth();
+    const login = session?.user?.githubLogin;
+
+    if (!login) {
+      return NextResponse.json(
+        { error: "GitHub sign-in is required for workflow controls." },
+        { status: 401 },
+      );
+    }
+
+    if (!isAuthorizedGitHubLogin(login)) {
+      return NextResponse.json(
+        { error: "This GitHub identity is not authorized for operator controls." },
+        { status: 403 },
+      );
+    }
+
     const body = await request.json();
     const repo = String(body.repo || "");
     const runId = Number(body.runId);
@@ -15,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     const result = await mutateRun(repo, runId, action);
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, operator: login });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Workflow action failed.";
     return NextResponse.json({ error: message }, { status: 403 });
