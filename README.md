@@ -94,3 +94,22 @@ MONITOR_AUTHORIZED_USERS=SouthPaw302
 The login requests only `read:user user:email`. Workflow rerun/cancel still uses the server-side `MONITOR_GITHUB_TOKEN`, requires `MONITOR_MUTATIONS_ENABLED=true`, and now also requires an authorized GitHub operator session.
 
 Generate the Auth.js secret with `npx auth secret`.
+
+
+## Interface architecture
+
+The production UI is organized into five operating surfaces:
+
+1. **Bridge** — situational awareness: health, live/fault attention queue, trend, fleet plates.
+2. **Actions** — workflow operations with searchable runs, on-demand job/step inspection, and guarded mutation controls.
+3. **Repositories** — repo-level state, last push, branch, PR/deployment/run counts, and workload graph.
+4. **Evidence** — artifacts, deployments, and pull-request proof records.
+5. **Runners** — runner pressure, backend capabilities, authentication state, and operator console.
+
+Responsive behavior is deliberate rather than a compressed desktop layout:
+- Desktop: sticky left mechanical mode rail.
+- Tablet: compact horizontal mode selector.
+- Phone: fixed thumb-friendly bottom dock, single-column priority layout, large touch targets.
+- Reduced-motion users get animations disabled automatically.
+
+Visual design follows high-performance HMI principles underneath the steampunk/futurist styling: muted default palette, sparse alarm colors, obvious hierarchy, and drill-down for detail instead of showing every datum at once.
