@@ -1,5 +1,7 @@
 # AEGIS // GitHub Monitor
 
+**Live command deck:** https://githubmonitor-seven.vercel.app/
+
 A hyper-visual steampunk/futurist GitHub operations command deck for the SouthPaw302 ecosystem.
 
 ## What it does

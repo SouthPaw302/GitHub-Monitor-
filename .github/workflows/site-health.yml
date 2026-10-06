@@ -1,6 +1,8 @@
 name: AEGIS Site Health
 
 on:
+  push:
+    branches: ["main"]
   schedule:
     - cron: "17 * * * *"
   workflow_dispatch:
@@ -10,20 +12,31 @@ permissions:
 
 jobs:
   probe:
-    if: ${{ vars.SITE_URL != '' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
+    env:
+      SITE_URL: https://githubmonitor-seven.vercel.app
     steps:
+      - uses: actions/checkout@v4
+
       - name: Probe live command deck
-        env:
-          SITE_URL: ${{ vars.SITE_URL }}
         run: |
           set -euo pipefail
           curl --fail --silent --show-error --max-time 25 "$SITE_URL/api/monitor" -o site-health.json
-          node -e 'const x=require("./site-health.json"); if(!x.generatedAt||!x.summary) process.exit(2); console.log("AEGIS SITE HEALTH: PASS", x.generatedAt)'
+          node -e 'const x=require("./site-health.json"); if(!x.generatedAt||!x.summary) process.exit(2); console.log("AEGIS SITE HEALTH: PASS", x.generatedAt, "repos=", x.summary.repoCount)'
+
+      - name: Probe page shell
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 25 "$SITE_URL/" -o site-home.html
+          grep -q "AEGIS" site-home.html
+          echo "AEGIS PAGE SHELL: PASS"
 
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: aegis-site-health
-          path: site-health.json
+          path: |
+            site-health.json
+            site-home.html
           retention-days: 3
