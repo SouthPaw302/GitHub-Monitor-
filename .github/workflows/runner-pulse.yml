@@ -1,0 +1,33 @@
+name: AEGIS Runner Pulse
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  runner-pulse:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      MONITOR_OWNER: SouthPaw302
+      MONITOR_REPOS: ${{ vars.MONITOR_REPOS }}
+      MONITOR_GITHUB_TOKEN: ${{ secrets.MONITOR_GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Inspect runner fleet
+        run: node scripts/runner-pulse.mjs
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aegis-runner-pulse
+          path: runner-pulse.json
+          retention-days: 7

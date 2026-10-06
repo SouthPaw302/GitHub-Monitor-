@@ -1,0 +1,29 @@
+name: AEGIS Site Health
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    if: ${{ vars.SITE_URL != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe live command deck
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+        run: |
+          set -euo pipefail
+          curl --fail --silent --show-error --max-time 25 "$SITE_URL/api/monitor" -o site-health.json
+          node -e 'const x=require("./site-health.json"); if(!x.generatedAt||!x.summary) process.exit(2); console.log("AEGIS SITE HEALTH: PASS", x.generatedAt)'
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aegis-site-health
+          path: site-health.json
+          retention-days: 3
