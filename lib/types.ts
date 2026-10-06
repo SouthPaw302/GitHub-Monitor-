@@ -73,11 +73,47 @@ export type ActivityPoint = {
   running: number;
 };
 
+export type RunInspection = {
+  repo: string;
+  runId: number;
+  fetchedAt: string;
+  logPolicy: "enabled" | "disabled";
+  jobs: Array<{
+    id: number;
+    name: string;
+    status: string;
+    conclusion: string | null;
+    url: string | null;
+    startedAt: string | null;
+    completedAt: string | null;
+    steps: Array<{
+      number: number;
+      name: string;
+      status: string;
+      conclusion: string | null;
+      startedAt: string | null;
+      completedAt: string | null;
+    }>;
+  }>;
+  failure: null | {
+    job: string;
+    step: string | null;
+    lines: string[];
+  };
+};
+
 export type MonitorSnapshot = {
   generatedAt: string;
   owner: string;
   authMode: "token" | "public";
   repoLimit: number;
+  capabilities: {
+    mutations: boolean;
+    runnerTelemetry: boolean;
+    detailedLogs: boolean;
+    privateRepositories: boolean;
+    cacheSeconds: number;
+  };
   summary: {
     repoCount: number;
     successRuns: number;
