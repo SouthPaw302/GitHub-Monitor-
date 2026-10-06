@@ -5,6 +5,7 @@ import {
   AlertTriangle,
   Archive,
   Box,
+  BrainCircuit,
   CheckCircle2,
   ChevronRight,
   CircleGauge,
@@ -52,8 +53,9 @@ import type {
   RunInspection,
   WorkflowRun,
 } from "@/lib/types";
+import IncidentIntelligence from "@/components/IncidentIntelligence";
 
-type ViewId = "bridge" | "actions" | "repos" | "evidence" | "runners";
+type ViewId = "bridge" | "actions" | "repos" | "evidence" | "intelligence" | "runners";
 type OperatorIdentity = { login: string | null; name: string | null } | null;
 
 const POLL_MS = 30_000;
@@ -64,6 +66,7 @@ const VIEWS: Array<{ id: ViewId; label: string; short: string; icon: typeof Layo
   { id: "actions", label: "Actions", short: "Runs", icon: Workflow },
   { id: "repos", label: "Repositories", short: "Repos", icon: GitBranch },
   { id: "evidence", label: "Evidence", short: "Proof", icon: Archive },
+  { id: "intelligence", label: "Intelligence", short: "Intel", icon: BrainCircuit },
   { id: "runners", label: "Runners", short: "Runners", icon: Cpu },
 ];
 
@@ -865,6 +868,16 @@ export default function TelemetryDeck({
                 </div>
               </section>
             </>
+          )}
+
+          {view === "intelligence" && (
+            <IncidentIntelligence
+              runs={allRuns}
+              onOpenRun={(run) => {
+                setView("actions");
+                setQuery(run.sha);
+              }}
+            />
           )}
 
           {view === "runners" && (

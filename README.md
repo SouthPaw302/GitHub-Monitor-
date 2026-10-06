@@ -113,3 +113,19 @@ Responsive behavior is deliberate rather than a compressed desktop layout:
 - Reduced-motion users get animations disabled automatically.
 
 Visual design follows high-performance HMI principles underneath the steampunk/futurist styling: muted default palette, sparse alarm colors, obvious hierarchy, and drill-down for detail instead of showing every datum at once.
+
+
+## Local incident intelligence
+
+The **Intelligence** view is intentionally read-only. It enriches recent failed workflow runs with deterministic GitHub job/step evidence and then sends only that failure text into a browser Web Worker.
+
+The worker uses Transformers.js `4.3.0` with `onnx-community/all-MiniLM-L6-v2-ONNX`:
+
+- WebGPU + fp16 is attempted first.
+- WASM + q8 is the fallback runtime.
+- If the model cannot load, deterministic keyword/workflow grouping still returns a result.
+- Embeddings and clustering execute in the browser; they do not authorize GitHub actions.
+- The model is lazy-loaded only when the operator opens Intelligence and requests analysis.
+- Browser caching is enabled so subsequent analyses can reuse downloaded model/runtime files.
+
+GitHub workflow data remains the source of truth. Local ML can group and prioritize failures, but cannot mutate repository state.
