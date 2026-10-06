@@ -19,16 +19,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Probe live command deck
+      - name: Probe live telemetry
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --max-time 25 "$SITE_URL/api/monitor" -o site-health.json
+          status="$(curl --silent --show-error --max-time 25 -w '%{http_code}' "$SITE_URL/api/monitor" -o site-health.json || true)"
+          echo "HTTP status: $status"
+          cat site-health.json || true
+          test "$status" = "200"
           node -e 'const x=require("./site-health.json"); if(!x.generatedAt||!x.summary) process.exit(2); console.log("AEGIS SITE HEALTH: PASS", x.generatedAt, "repos=", x.summary.repoCount)'
 
       - name: Probe page shell
+        if: always()
         run: |
           set -euo pipefail
-          curl --fail --silent --show-error --max-time 25 "$SITE_URL/" -o site-home.html
+          status="$(curl --silent --show-error --max-time 25 -w '%{http_code}' "$SITE_URL/" -o site-home.html || true)"
+          echo "HTTP status: $status"
+          test "$status" = "200"
           grep -q "AEGIS" site-home.html
           echo "AEGIS PAGE SHELL: PASS"
 
@@ -39,4 +45,5 @@ jobs:
           path: |
             site-health.json
             site-home.html
+          if-no-files-found: ignore
           retention-days: 3
